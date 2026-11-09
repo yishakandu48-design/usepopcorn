@@ -14,7 +14,8 @@ export default function StarRating({
   color = "#fcc419",
   size = 48,
   className = "",
-  messages,
+  messages = [],
+  onSetMovieRating,
 }) {
   const [rating, setRating] = useState(0);
   const [tempRating, setTempRating] = useState(0);
@@ -27,6 +28,7 @@ export default function StarRating({
   };
   function handleRating(rating) {
     setRating(rating);
+    onSetMovieRating(rating);
   }
   return (
     <div style={containerStyle}>

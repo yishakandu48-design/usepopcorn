@@ -1,0 +1,13 @@
+{
+  "folders": [
+	{
+		"name": "usepopcorn",
+		"path": ".."
+	},
+	{
+		"name": "myreactpra",
+		"path": "../../myreactpra"
+	}
+],
+  "settings": {}
+}

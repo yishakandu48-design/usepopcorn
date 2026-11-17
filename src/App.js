@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
   {
@@ -213,9 +213,23 @@ function Navbar({ children }) {
 function Main({ children }) {
   return <main className="main">{children}</main>;
 }
+
+const key = `21cca771`;
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
+  const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState(tempWatchedData);
+
+  useEffect(function () {
+    async function fetchMovies() {
+      const result = await fetch(
+        `http://www.omdbapi.com/?apikey=${key}&s=titanic`,
+      );
+      const data = await result.json();
+      setMovies(data.Search);
+    }
+    fetchMovies();
+  }, []);
+
   return (
     <>
       <Navbar>

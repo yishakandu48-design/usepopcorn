@@ -218,17 +218,23 @@ const key = `21cca771`;
 export default function App() {
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState(tempWatchedData);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const query = "titanic";
   useEffect(function () {
     async function fetchMovies() {
+      setIsLoading(true);
       const result = await fetch(
-        `http://www.omdbapi.com/?apikey=${key}&s=titanic`,
+        `http://www.omdbapi.com/?apikey=${key}&s=${query}`,
       );
       const data = await result.json();
       setMovies(data.Search);
+      setIsLoading(false);
     }
     fetchMovies();
   }, []);
+  function Loader() {
+    return <p className="loader">Loading...</p>;
+  }
 
   return (
     <>
@@ -238,9 +244,7 @@ export default function App() {
       </Navbar>
 
       <Main>
-        <Box>
-          <MovieList movies={movies} />
-        </Box>
+        <Box>{isLoading ? <Loader /> : <MovieList movies={movies} />}</Box>
         <Box>
           <WatchedMovieSummery watched={watched} />
           <WatchedMovieList watched={watched} />

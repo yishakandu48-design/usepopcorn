@@ -119,10 +119,36 @@ function Box({ children }) {
   );
 }
 
-function MovieDetails({ selectedId, onCloseMovie, Loader }) {
+function MovieDetails({
+  selectedId,
+  onCloseMovie,
+  Loader,
+  onAddWatched,
+  watched,
+}) {
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [userRating, setUserRating] = useState(0);
 
+  let isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
+  let watchedUserRating = watched.find(
+    (movie) => movie.imdbID === selectedId,
+  )?.userRating;
+
+  function handleAdd() {
+    const newWatchedMovie = {
+      imdbID: selectedId,
+      Title: title,
+      Year: year,
+      Poster: poster,
+      imdbRating: Number(imdbRating),
+      runtime: Number(runtime.split(" ").at(0)),
+      userRating,
+    };
+
+    onAddWatched(newWatchedMovie);
+    onCloseMovie();
+  }
   const {
     Title: title,
     Year: year,
@@ -171,22 +197,38 @@ function MovieDetails({ selectedId, onCloseMovie, Loader }) {
               <p>{genre}</p>
               <p>
                 <span>⭐️</span>
-                {imdbRating} Rating
+                {imdbRating} IMBD Rating
               </p>
             </div>
           </header>
           <section>
             <div className="rating">
               {/* {!isWatched ? ( */}
-
-              <StarRating maxRating={10} size={24} />
-
-              {/* ) : ( */}
-              {/* // <p>
+              {!isWatched ? (
+                <>
+                  <StarRating
+                    maxRating={10}
+                    size={24}
+                    onSetMovieRating={setUserRating}
+                  />
+                  {userRating > 0 && (
+                    <button className="btn-add" onClick={handleAdd}>
+                      + Add Movie
+                    </button>
+                  )}
+                  {/* ) : ( */}
+                  {/* // <p>
                 //   You rated this Movie! <span>⭐️ </span> {watchedUserRating}
                 // </p> */}
-              {/* )} */}
+                  {/* )} */}
+                </>
+              ) : (
+                <p>
+                  You rated this Movie! <span>⭐️ </span> {watchedUserRating}
+                </p>
+              )}
             </div>
+
             <p>
               <em>{plot}</em>
               <p>Starring {actors}</p>
@@ -307,7 +349,7 @@ function ErrorMessage({ message }) {
 const key = `21cca771`;
 export default function App() {
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
@@ -319,7 +361,9 @@ export default function App() {
   function handleCloseMovie() {
     setSelectedId(null);
   }
-
+  function handleAddMovie(movie) {
+    setWatched([...watched, movie]);
+  }
   useEffect(function () {
     async function fetchMovies() {
       try {
@@ -373,6 +417,8 @@ export default function App() {
               onCloseMovie={handleCloseMovie}
               selectedId={selectedId}
               Loader={Loader}
+              onAddWatched={handleAddMovie}
+              watched={watched}
             />
           ) : (
             <>

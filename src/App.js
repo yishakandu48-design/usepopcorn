@@ -60,15 +60,14 @@ function Logo() {
   );
 }
 
-function Search() {
-  const [query, setQuery] = useState("");
+function Search({ query, onSetQuery }) {
   return (
     <input
       className="search"
       type="text"
       placeholder="Search movies..."
       value={query}
-      onChange={(e) => setQuery(e.target.value)}
+      onChange={(e) => onSetQuery(e.target.value)}
     />
   );
 }
@@ -178,6 +177,19 @@ function MovieDetails({
     },
     [selectedId],
   );
+
+  useEffect(
+    function () {
+      if (!title) return;
+      document.title = `Movie|${title}`;
+      return function () {
+        document.title = "usePopCorn";
+      };
+    },
+
+    [title],
+  );
+
   return (
     <div className="details">
       {isLoading ? (
@@ -255,11 +267,11 @@ function WatchedMovieSummery({ watched }) {
         </p>
         <p>
           <span>⭐️</span>
-          <span>{avgImdbRating}</span>
+          <span>{avgImdbRating.toFixed(2)}</span>
         </p>
         <p>
           <span>🌟</span>
-          <span>{avgUserRating}</span>
+          <span>{avgUserRating.toFixed(2)}</span>
         </p>
         <p>
           <span>⏳</span>
@@ -269,7 +281,7 @@ function WatchedMovieSummery({ watched }) {
     </div>
   );
 }
-function WatchedMovie({ movie }) {
+function WatchedMovie({ movie, onDeleteWatched }) {
   return (
     <li key={movie.imdbID}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
@@ -287,15 +299,21 @@ function WatchedMovie({ movie }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+        <button
+          className="btn-delete"
+          onClick={() => onDeleteWatched(movie.imdbID)}
+        >
+          X
+        </button>
       </div>
     </li>
   );
 }
-function WatchedMovieList({ watched }) {
+function WatchedMovieList({ watched, onDeleteWatched }) {
   return (
     <ul className="list">
       {watched.map((movie, i) => (
-        <WatchedMovie movie={movie} key={i} />
+        <WatchedMovie movie={movie} key={i} onDeleteWatched={onDeleteWatched} />
       ))}
     </ul>
   );
@@ -353,7 +371,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const query = "titanic";
+  const [query, SetQuery] = useState("titanic");
 
   function handleSelectMovie(id) {
     setSelectedId(id);
@@ -364,33 +382,48 @@ export default function App() {
   function handleAddMovie(movie) {
     setWatched([...watched, movie]);
   }
-  useEffect(function () {
-    async function fetchMovies() {
-      try {
-        setIsLoading(true);
+  function handleDeleteWatchedMovie(id) {
+    setWatched((watched) => watched.filter((Movie) => Movie.imdbID !== id));
+  }
+  useEffect(
+    function () {
+      const controller = new AbortController();
+      async function fetchMovies() {
+        try {
+          setIsLoading(true);
+          setError("");
+          const res = await fetch(
+            `https://www.omdbapi.com/?apikey=${key}&s=${query}`,
+            { signal: controller.signal },
+          );
+          if (!res.ok) {
+            throw new Error("some thing went wrong");
+          }
 
-        const res = await fetch(
-          `https://www.omdbapi.com/?apikey=${key}&s=${query}`,
-        );
-        if (!res.ok) {
-          throw new Error("some thing went wrong");
+          const data = await res.json();
+          if (data.Response === "False") {
+            throw new Error("Movie not found");
+          }
+          setMovies(data.Search);
+          console.log(data.Search);
+          setError("");
+        } catch (err) {
+          console.error(err.message);
+          if (err.name !== "AbortError") {
+            setError(err.message);
+          }
+        } finally {
+          setIsLoading(false);
         }
-
-        const data = await res.json();
-        if (data.Response === "False") {
-          throw new Error("Movie not found");
-        }
-        setMovies(data.Search);
-        console.log(data.Search);
-      } catch (err) {
-        console.error(err.message);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
       }
-    }
-    fetchMovies();
-  }, []);
+      fetchMovies();
+
+      return function () {
+        controller.abort();
+      };
+    },
+    [query],
+  );
   function Loader() {
     return <p className="loader">Loading...</p>;
   }
@@ -398,7 +431,7 @@ export default function App() {
   return (
     <>
       <Navbar>
-        <Search />
+        <Search query={query} onSetQuery={SetQuery} />
         <NumResults movies={movies} />
       </Navbar>
 
@@ -423,7 +456,10 @@ export default function App() {
           ) : (
             <>
               <WatchedMovieSummery watched={watched} />
-              <WatchedMovieList watched={watched} />
+              <WatchedMovieList
+                watched={watched}
+                onDeleteWatched={handleDeleteWatchedMovie}
+              />
             </>
           )}
         </Box>

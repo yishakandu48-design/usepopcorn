@@ -128,6 +128,22 @@ function MovieDetails({
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState(0);
+  useEffect(
+    function () {
+      function callback() {
+        document.addEventListener("keydown", function (e) {
+          if (e.code === "Escape") {
+            onCloseMovie();
+            console.log("closing");
+          }
+        });
+        return function () {
+          document.removeEventListener("keydown", callback);
+        };
+      }
+    },
+    [onCloseMovie],
+  );
 
   let isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
   let watchedUserRating = watched.find(
@@ -371,7 +387,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const [query, SetQuery] = useState("titanic");
+  const [query, SetQuery] = useState("");
 
   function handleSelectMovie(id) {
     setSelectedId(id);
@@ -385,6 +401,7 @@ export default function App() {
   function handleDeleteWatchedMovie(id) {
     setWatched((watched) => watched.filter((Movie) => Movie.imdbID !== id));
   }
+
   useEffect(
     function () {
       const controller = new AbortController();
@@ -416,6 +433,12 @@ export default function App() {
           setIsLoading(false);
         }
       }
+      if (query.length < 3) {
+        setMovies([]);
+        setError("");
+        return;
+      }
+      handleCloseMovie();
       fetchMovies();
 
       return function () {
